@@ -1,0 +1,1 @@
+pip install opencv-python numpy paddlepaddle paddleocr python-pptx simple-lama-inpainting torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu # 如果有GPU，请安装GPU版本的torch
