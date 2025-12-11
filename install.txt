@@ -1,1 +1,4 @@
-pip install opencv-python numpy paddlepaddle paddleocr python-pptx simple-lama-inpainting torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu # 如果有GPU，请安装GPU版本的torch
+pip install paddlepaddle-gpu==2.6.1 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+pip install paddleocr==2.7.0.3
+pip install shapely pyclipper "numpy<2.0" opencv-python python-pptx simple-lama-inpainting
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118

@@ -1,28 +1,60 @@
 import os
-import shutil
-from pathlib import Path
-from huggingface_hub import snapshot_download
+import requests
+import tarfile
 
-# 1. 强制使用镜像
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+# 创建存放模型的目录
+MODEL_DIR = "models_server"
+if not os.path.exists(MODEL_DIR):
+    os.makedirs(MODEL_DIR)
 
-# 2. 定义模型ID
-repo_id = "Qwen/Qwen2-VL-2B-Instruct"
+# PP-OCRv4 Server (服务器版) 模型地址
+# 比默认的 Mobile 版大几十倍，精度更高
+urls = {
+    "det": "https://paddleocr.bj.bcebos.com/PP-OCRv4/chinese/ch_PP-OCRv4_det_server_infer.tar",
+    "rec": "https://paddleocr.bj.bcebos.com/PP-OCRv4/chinese/ch_PP-OCRv4_rec_server_infer.tar",
+    "cls": "https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar"
+}
 
-print(f"[-] 开始下载模型: {repo_id}")
-print("[-] 如果下载中断，再次运行此脚本即可断点续传。")
+def download_and_extract(name, url):
+    filename = url.split("/")[-1]
+    filepath = os.path.join(MODEL_DIR, filename)
+    
+    # 1. 下载
+    if not os.path.exists(filepath):
+        print(f"正在下载 {name} 模型 (可能需要几分钟)...")
+        print(f"URL: {url}")
+        try:
+            response = requests.get(url, stream=True)
+            with open(filepath, "wb") as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk: f.write(chunk)
+            print("下载完成。")
+        except Exception as e:
+            print(f"下载失败: {e}")
+            return False
+    else:
+        print(f"{name} 模型压缩包已存在，跳过下载。")
 
-try:
-    # resume_download=True 开启断点续传
-    # local_files_only=False 允许联网
-    path = snapshot_download(
-        repo_id=repo_id, 
-        resume_download=True,
-        cache_dir=None # 默认存到 C:\Users\xxx\.cache\huggingface\hub
-    )
-    print(f"\n[√] 下载成功！模型保存在: {path}")
-    print("现在你可以重新运行 pic2ppt_qwen_mirror.py 了。")
+    # 2. 解压
+    print(f"正在解压 {filename}...")
+    try:
+        with tarfile.open(filepath) as tar:
+            tar.extractall(path=MODEL_DIR)
+        print("解压完成。\n")
+        return True
+    except Exception as e:
+        print(f"解压失败: {e}")
+        return False
 
-except Exception as e:
-    print(f"\n[!] 下载失败: {e}")
-    print("建议：请手动删除 C:\\Users\\<用户名>\\.cache\\huggingface\\hub 下的相关文件夹后重试。")
+if __name__ == "__main__":
+    print("=== 开始下载 PaddleOCR Server (高精度) 模型 ===")
+    success = True
+    for name, url in urls.items():
+        if not download_and_extract(name, url):
+            success = False
+    
+    if success:
+        print("=== 所有模型准备就绪 ===")
+        print(f"模型已保存在: {os.path.abspath(MODEL_DIR)}")
+    else:
+        print("部分模型下载失败，请检查网络。")
