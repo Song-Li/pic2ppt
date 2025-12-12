@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pic2PPT Web Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <header class="bg-white shadow p-4 flex justify-between items-center z-10">
+        <h1 class="text-xl font-bold text-gray-800">Pic2PPT 在线编辑器 (CPU版)</h1>
+        <div class="space-x-4">
+            <input type="file" id="uploadInput" accept="image/*" class="hidden">
+            <button onclick="document.getElementById('uploadInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
+                📂 上传图片
+            </button>
+            <button id="genBtn" onclick="generatePPT()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow opacity-50 cursor-not-allowed" disabled>
+                ✨ 生成 PPT
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <div class="flex-1 bg-gray-200 relative overflow-auto flex justify-center items-center p-4" id="canvasContainer">
+            <div class="bg-white shadow-lg">
+                <canvas id="c"></canvas>
+            </div>
+            <div id="loading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white z-50 hidden">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-white mx-auto mb-2"></div>
+                    <p id="loadingText">处理中...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-80 bg-white shadow-lg p-4 flex flex-col overflow-y-auto z-10">
+            <div class="mb-6">
+                <h3 class="font-bold text-gray-700 mb-2 border-b pb-1">当前选中框</h3>
+                <div id="boxInfo" class="text-sm text-gray-600">未选中任何框</div>
+                <div class="mt-2 space-y-2">
+                    <textarea id="textEditor" class="w-full border p-2 rounded text-sm hidden" rows="3"></textarea>
+                    <button onclick="addBox()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-1 rounded text-sm">
+                        + 新增框 (Ctrl+N)
+                    </button>
+                    <button onclick="deleteActiveBox()" class="w-full bg-red-100 hover:bg-red-200 text-red-600 py-1 rounded text-sm">
+                        - 删除框 (Del)
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded text-xs text-gray-600 leading-relaxed">
+                <strong>⌨ 快捷键指南:</strong><br>
+                <span class="text-blue-600 font-bold">WASD</span>: 微调边缘 (1px)<br>
+                <span class="text-blue-600 font-bold">Shift + WASD</span>: 快速微调 (5px)<br>
+                <span class="text-blue-600 font-bold">方向键</span>: 整体移动<br>
+                <span class="text-blue-600 font-bold">Q/E</span>: 整体缩放<br>
+                W/S 调整高，A/D 调整宽
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

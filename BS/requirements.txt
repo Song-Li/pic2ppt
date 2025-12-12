@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python-headless
+numpy
+paddlepaddle==2.6.0
+paddleocr>=2.7.0
+simple-lama-inpainting
+python-pptx
+Pillow
+torch
+torchvision
