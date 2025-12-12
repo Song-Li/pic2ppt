@@ -20,9 +20,9 @@ CLS_DIR = os.path.join(MODEL_DIR, "ch_ppocr_mobile_v2.0_cls_infer")
 
 # PPT/排版配置
 FONT_SIZE_FACTOR = 0.95      # 字体大小系数
-MASK_DILATE_ITER = 1         
-MASK_PADDING_PIXELS = 10     # Mask 相对于红框的额外安全边距 (用于清理)
-PADDING_PIXELS_GREEN = 1     # 绿框的固定外扩像素 
+MASK_DILATE_ITER = 2         
+MASK_PADDING_PIXELS = 2     # Mask 相对于红框的额外安全边距 (用于清理)
+PADDING_PIXELS_GREEN = 2     # 绿框的固定外扩像素 
 MIN_SCORE = 0.70
 
 class ImageToPPTConverter:

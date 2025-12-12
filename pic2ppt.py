@@ -26,9 +26,9 @@ CLS_DIR = os.path.join(MODEL_DIR, "ch_ppocr_mobile_v2.0_cls_infer")
 # 2. 调优参数
 MIN_SCORE = 0.75             
 FONT_SIZE_FACTOR = 0.98      
-MASK_PADDING_PIXELS = 2      # [修正] Mask安全边距降至1像素
-MASK_DILATE_ITER = 2         # [修正] 核心：Mask 膨胀迭代次数降至0 (仅使用 kernel size)
-PADDING_PIXELS_GREEN = 1     # 绿框的固定外扩像素 
+MASK_PADDING_PIXELS = 0      # [修正] Mask安全边距降至1像素
+MASK_DILATE_ITER = 1         # [修正] 核心：Mask 膨胀迭代次数降至0 (仅使用 kernel size)
+PADDING_PIXELS_GREEN = 0     # 绿框的固定外扩像素 
 # ===========================================
 
 def check_gpu():
