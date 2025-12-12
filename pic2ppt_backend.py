@@ -252,7 +252,7 @@ class ImageToPPTConverter:
                 p = tf.paragraphs[0]
                 p.text = text_content
                 p.font.color.rgb = RGBColor(*block['color'])
-                p.font.bold = block['bold']
+                # p.font.bold = block['bold']
                 p.font.name = "微软雅黑"
                 
                 # --- 字号双重约束 ---
