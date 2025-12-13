@@ -1,0 +1,98 @@
+:root {
+    --bg-color: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --primary: #007bff;
+    --primary-hover: #0056b3;
+    --text-main: #ffffff;
+    --text-sec: #b0b0b0;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 90%;
+    max-width: 1000px;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 span { color: var(--primary); }
+
+/* 上传框 */
+.upload-box {
+    border: 2px dashed #444;
+    border-radius: 10px;
+    padding: 50px;
+    text-align: center;
+    cursor: pointer;
+    background-color: var(--card-bg);
+    transition: 0.3s;
+}
+.upload-box:hover { border-color: var(--primary); background-color: #333; }
+.upload-box .icon { font-size: 48px; display: block; margin-bottom: 10px; }
+
+/* 预览区 */
+.editor-section { display: flex; gap: 20px; flex-wrap: wrap; }
+.preview-container {
+    position: relative;
+    flex: 2;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 300px;
+}
+#previewImg { width: 100%; display: block; }
+
+/* 覆盖层（画框） */
+#overlayLayer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; /* 让点击穿透到下面的框 */
+}
+.box-div {
+    position: absolute;
+    border: 2px solid #00ff00;
+    background-color: rgba(0, 255, 0, 0.1);
+    cursor: pointer;
+    pointer-events: auto; /* 恢复点击 */
+    transition: 0.2s;
+}
+.box-div:hover { background-color: rgba(255, 0, 0, 0.3); border-color: red; }
+.box-div.deleted { display: none; }
+
+/* 控制区 */
+.controls { flex: 1; background: var(--card-bg); padding: 20px; border-radius: 8px; }
+.btn-primary, .btn-download {
+    display: block; width: 100%; padding: 15px;
+    background: var(--primary); color: white; border: none;
+    border-radius: 5px; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none;
+    margin-top: 20px;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary {
+    background: transparent; border: 1px solid #666; color: #ccc;
+    padding: 10px 20px; margin-top: 10px; cursor: pointer;
+}
+
+/* 结果区 */
+.result-section { text-align: center; margin-top: 20px; padding: 20px; background: #28a74522; border: 1px solid #28a745; border-radius: 8px; }
+
+/* Loading */
+.loader { text-align: center; padding: 40px; }
+.spinner {
+    width: 40px; height: 40px; border: 4px solid #444; border-top: 4px solid var(--primary);
+    border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
