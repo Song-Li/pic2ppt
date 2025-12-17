@@ -19,8 +19,17 @@ document.getElementById('uploadInput').addEventListener('change', async (e) => {
     formData.append('file', file);
 
     try {
-        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-        const data = await res.json();
+        // [修正1] 路径从 /api/upload 改为 /upload
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        
+        if (!res.ok) throw new Error(`上传失败: ${res.status}`);
+
+        const responseJson = await res.json();
+        
+        // [修正2] 后端返回的是 {status: "ok", data: {...}}，所以要取 responseJson.data
+        const data = responseJson.data;
+
+        if (!data) throw new Error("后端返回数据格式错误");
         
         currentFilename = data.filename;
         loadEditor(data);
@@ -28,6 +37,7 @@ document.getElementById('uploadInput').addEventListener('change', async (e) => {
         document.getElementById('genBtn').disabled = false;
         document.getElementById('genBtn').classList.remove('opacity-50', 'cursor-not-allowed');
     } catch (err) {
+        console.error(err);
         alert("处理失败: " + err.message);
     } finally {
         hideLoading();
@@ -43,16 +53,29 @@ function loadEditor(data) {
     canvas.setWidth(data.width);
     canvas.setHeight(data.height);
 
-    // 加载背景图
-    fabric.Image.fromURL(`/api/image/${data.filename}`, (img) => {
+    // [修正3] 图片路径改为 /static/文件名 (或者直接用后端返回的 data.url)
+    const imageUrl = `/static/${data.filename}`;
+
+    fabric.Image.fromURL(imageUrl, (img) => {
+        if (!img) {
+            alert("无法加载图片，请检查 static 文件夹中是否存在该文件");
+            return;
+        }
         img.set({ selectable: false });
         canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
     });
 
     // 绘制框
-    data.boxes.forEach(box => {
-        addRect(box.x, box.y, box.w, box.h, box.text);
-    });
+    if (data.boxes) {
+        data.boxes.forEach(box => {
+            // 注意：检查后端返回的字段名是否也是 x, y, w, h，如果是 raw_x 等需调整
+            // 假设 core.py 返回的结构里包含 x, y, w, h
+            // 这里根据 core.py 的逻辑，initial_boxes 是个列表，需要确认 key
+            // 暂时假设后端传回来的 boxes 是对象数组。如果 core.py 传回的是列表数组，这里可能还会报错。
+            // 我们先按对象处理，如果报错再调整。
+             addRect(box.x, box.y, box.w, box.h, box.text);
+        });
+    }
 }
 
 function addRect(left, top, width, height, text) {
@@ -107,7 +130,6 @@ textEditor.addEventListener('input', (e) => {
 // === 功能函数 ===
 
 window.addBox = function() {
-    // 在视图中心添加框
     const center = canvas.getVpCenter();
     const group = addRect(center.x - 75, center.y - 15, 150, 30, "新文本");
     canvas.setActiveObject(group);
@@ -132,27 +154,36 @@ window.generatePPT = async function() {
     canvas.getObjects().forEach(obj => {
         if (obj.type === 'group') {
             boxes.push({
-                x: obj.left,
-                y: obj.top,
-                w: obj.getScaledWidth(),
-                h: obj.getScaledHeight(),
-                text: obj.ocrText || ""
+                // 给后端传参时需要 id，这里简单给个 0，或者后端若不强制校验 id 可忽略
+                id: 0, 
+                x: Math.round(obj.left),
+                y: Math.round(obj.top),
+                w: Math.round(obj.getScaledWidth()),
+                h: Math.round(obj.getScaledHeight()),
+                text: obj.ocrText || "",
+                color: [0, 0, 0], // 默认黑色
+                is_bold: false
             });
         }
     });
 
     try {
-        const res = await fetch('/api/generate', {
+        // [修正4] 路径从 /api/generate 改为 /generate
+        const res = await fetch('/generate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ filename: currentFilename, boxes: boxes })
         });
         
-        const data = await res.json();
-        if (data.download_url) {
-            window.location.href = data.download_url;
+        if (!res.ok) throw new Error(`生成失败: ${res.status}`);
+
+        const responseJson = await res.json();
+        
+        // 这里的 responseJson 可能是 {status: "ok", ppt_url: "..."}
+        if (responseJson.ppt_url) {
+            window.location.href = responseJson.ppt_url;
         } else {
-            throw new Error("生成失败");
+            throw new Error("生成返回数据异常");
         }
     } catch (err) {
         alert("生成出错: " + err.message);
@@ -162,36 +193,35 @@ window.generatePPT = async function() {
 }
 
 function showLoading(msg) {
-    document.getElementById('loadingText').innerText = msg;
-    document.getElementById('loading').classList.remove('hidden');
+    const loadingText = document.getElementById('loadingText');
+    const loading = document.getElementById('loading');
+    if (loadingText) loadingText.innerText = msg;
+    if (loading) loading.classList.remove('hidden');
 }
 function hideLoading() {
-    document.getElementById('loading').classList.add('hidden');
+    const loading = document.getElementById('loading');
+    if (loading) loading.classList.add('hidden');
 }
 
-// === 键盘事件 (复刻 WASD 微调) ===
+// === 键盘事件 ===
 document.addEventListener('keydown', (e) => {
     const activeObj = canvas.getActiveObject();
     if (!activeObj) {
-        // 全局快捷键
         if (e.ctrlKey && e.key === 'n') { e.preventDefault(); addBox(); }
         return;
     }
 
-    // 如果焦点在文本框，不触发快捷键
     if (document.activeElement === textEditor) return;
 
     const step = e.shiftKey ? 5 : 1;
     let modified = false;
 
-    // 删除
     if (e.key === 'Delete' || (e.ctrlKey && e.key === 'd')) {
         deleteActiveBox();
         e.preventDefault();
         return;
     }
 
-    // 方向键整体移动
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         if (e.key === 'ArrowUp') activeObj.top -= step;
@@ -201,51 +231,45 @@ document.addEventListener('keydown', (e) => {
         modified = true;
     }
 
-    // WASD 边缘微调 (模拟 Tkinter 逻辑)
-    // 注意：Fabric 的 scaling 机制和 xywh 不同，这里简化为直接改宽高
-    // Fabric 默认中心点可能会变，这里需要小心处理
-    
     const w = activeObj.getScaledWidth();
     const h = activeObj.getScaledHeight();
 
-    if (e.key.toLowerCase() === 'w') { // 调整上边
-        if (e.shiftKey) { // 下移 (height 减小, top 增加)
+    if (e.key.toLowerCase() === 'w') {
+        if (e.shiftKey) { 
             if (h > step) { activeObj.set('height', (h - step) / activeObj.scaleY); activeObj.top += step; }
-        } else { // 上移 (height 增加, top 减小)
+        } else {
             activeObj.set('height', (h + step) / activeObj.scaleY); activeObj.top -= step;
         }
         modified = true;
     }
     
-    if (e.key.toLowerCase() === 's') { // 调整下边
-         // S: 下边下移 (增加高度)
+    if (e.key.toLowerCase() === 's') {
          if (!e.shiftKey) {
              activeObj.set('height', (h + step) / activeObj.scaleY);
-         } else { // Shift+S: 下边上移 (减小高度)
+         } else {
              if (h > step) activeObj.set('height', (h - step) / activeObj.scaleY);
          }
          modified = true;
     }
 
-    if (e.key.toLowerCase() === 'a') { // 调整左边
-        if (!e.shiftKey) { // A: 左边左移 (x 减小, w 增加)
+    if (e.key.toLowerCase() === 'a') {
+        if (!e.shiftKey) { 
             activeObj.set('width', (w + step) / activeObj.scaleX); activeObj.left -= step;
-        } else { // Shift+A: 左边右移 (x 增加, w 减小)
+        } else { 
             if (w > step) { activeObj.set('width', (w - step) / activeObj.scaleX); activeObj.left += step; }
         }
         modified = true;
     }
 
-    if (e.key.toLowerCase() === 'd') { // 调整右边
-        if (!e.shiftKey) { // D: 右边右移 (w 增加)
+    if (e.key.toLowerCase() === 'd') {
+        if (!e.shiftKey) { 
             activeObj.set('width', (w + step) / activeObj.scaleX);
-        } else { // Shift+D: 右边左移 (w 减小)
+        } else { 
             if (w > step) activeObj.set('width', (w - step) / activeObj.scaleX);
         }
         modified = true;
     }
 
-    // Q/E 整体缩放
     if (e.key.toLowerCase() === 'q') {
         activeObj.scale(activeObj.scaleX * (1 - 0.01 * step));
         modified = true;
@@ -256,7 +280,7 @@ document.addEventListener('keydown', (e) => {
     }
 
     if (modified) {
-        activeObj.setCoords(); // 更新坐标响应区
+        activeObj.setCoords();
         canvas.requestRenderAll();
         updateSidebar();
     }

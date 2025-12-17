@@ -2,11 +2,11 @@ fastapi
 uvicorn
 python-multipart
 opencv-python-headless
-numpy
-paddlepaddle==2.6.0
-paddleocr>=2.7.0
+paddlepaddle==2.6.2
+paddleocr
 simple-lama-inpainting
 python-pptx
 Pillow
 torch
 torchvision
+numpy==1.26.4
